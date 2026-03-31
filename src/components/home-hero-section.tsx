@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import HomeAuthControls from "@/components/home-auth-controls";
+import HomeMobileNav from "@/components/home-mobile-nav";
 import { CENTER_NAV_LINKS, HERO_VIDEO_SRC } from "@/lib/constants";
 
 export default function HomeHeroSection() {
@@ -34,7 +36,7 @@ export default function HomeHeroSection() {
                 priority
               />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 hidden sm:block">
               <span className="caps-2xs block text-sm font-semibold text-foreground">
                 Luma Studio
               </span>
@@ -60,27 +62,10 @@ export default function HomeHeroSection() {
           </div>
 
           <div className="home-nav-auth">
-            {/* <Show when="signed-out">
-              <SignInButton mode="modal" fallbackRedirectUrl="/studio">
-                <Button type="button" variant="outline" size="sm" className="home-btn-signin">
-                  Sign In
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal" fallbackRedirectUrl="/studio">
-                <Button type="button" className="home-btn-nav-primary">
-                  Get Started
-                </Button>
-              </SignUpButton>
-            </Show>
-
-            <Show when="signed-in">
-              <Button variant="outline" asChild className="home-btn-studio-outline">
-                <Link href="/studio" prefetch={false}>
-                  Studio
-                </Link>
-              </Button>
-              <UserButton />
-            </Show> */}
+            <div className="hidden md:flex items-center gap-2 sm:gap-3">
+              <HomeAuthControls variant="nav" />
+            </div>
+            <HomeMobileNav />
           </div>
         </nav>
 
@@ -95,21 +80,7 @@ export default function HomeHeroSection() {
           </p>
 
           <div className="home-hero-ctas">
-            {/* <Show when="signed-out">
-              <SignUpButton mode="modal" fallbackRedirectUrl="/studio">
-                <Button type="button" className="home-btn-hero-primary">
-                  Get Started Free
-                </Button>
-              </SignUpButton>
-            </Show>
-
-            <Show when="signed-in">
-              <Button asChild className="home-btn-hero-primary">
-                <Link href="/studio" prefetch={false}>
-                  Open Studio
-                </Link>
-              </Button>
-            </Show> */}
+            <HomeAuthControls variant="cta" />
 
             <Button asChild variant="ghost" className="hero-pill home-btn-hero-ghost">
               <a href="#how-it-works">Watch 2min demo</a>
@@ -117,7 +88,7 @@ export default function HomeHeroSection() {
           </div>
         </div>
 
-        <div className="home-demo-wrap border-2">
+        <div className="home-demo-wrap">
           <div className="home-demo-shift">
             <div className="hero-demo-glass home-demo-glass-shell">
               <div className="hero-demo-glass-inner home-demo-inner">
