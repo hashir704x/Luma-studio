@@ -51,7 +51,7 @@ export default function HomeAuthControls({ variant }: HomeAuthControlsProps) {
               : "home-btn-hero-primary"
           }
         >
-          <Link href="/studio" prefetch={false}>
+          <Link href="/studio">
             Open Studio
           </Link>
         </Button>
