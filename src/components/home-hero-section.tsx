@@ -72,18 +72,22 @@ export default function HomeHeroSection() {
         <div className="home-hero-copy">
           <h1 className="hero-title home-hero-title">
             <span className="block">High-fidelity style transfer.</span>
-            <span className="home-hero-tagline">One upload, a gallery-ready image.</span>
+            <span className="home-hero-tagline">
+              One upload, a gallery-ready image.
+            </span>
           </h1>
 
           <p className="home-hero-lede">
             Upload once, pick a curated style, get a polished restyle.
           </p>
-
+ 
           <div className="home-hero-ctas">
-            <HomeAuthControls variant="cta" />
-
-            <Button asChild variant="ghost" className="hero-pill home-btn-hero-ghost">
-              <a href="#how-it-works">Watch 2min demo</a>
+            <Button
+              // asChild
+              // variant="ghost"
+              className="hero-pill home-btn-hero-ghost"
+            >
+              Get Started
             </Button>
           </div>
         </div>

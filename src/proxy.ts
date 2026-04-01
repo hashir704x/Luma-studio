@@ -17,7 +17,7 @@ export const proxy: NextProxy = async (request) => {
   if (session) return NextResponse.next();
 
   const redirectUrl = new URL("/", request.url);
-//   redirectUrl.searchParams.set("next", `${pathname}${search}`);
+  //   redirectUrl.searchParams.set("next", `${pathname}${search}`);
   return NextResponse.redirect(redirectUrl);
 };
 

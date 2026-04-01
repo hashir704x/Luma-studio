@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { authClient } from "@/lib/auth-client";
 
 export type AuthModalView = "login" | "signup";
 
@@ -20,48 +22,84 @@ type AuthModalProps = {
   onViewChange: (view: AuthModalView) => void;
 };
 
-function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden focusable="false" {...props}>
-      <path
-        fill="#FFC107"
-        d="M43.611 20.083H42V20H24v8h11.303C33.653 32.657 29.194 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.306 14.691 12.88 19.51C14.66 15.108 19.0 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691Z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.151 26.716 36 24 36c-5.173 0-9.62-3.321-11.284-7.946l-6.525 5.026C9.505 39.556 16.227 44 24 44Z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.611 20.083H42V20H24v8h11.303a12.06 12.06 0 0 1-4.084 5.57l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917Z"
-      />
-    </svg>
-  );
-}
-
 export default function AuthModal({
   open,
   view,
   onOpenChange,
   onViewChange,
 }: AuthModalProps) {
+  const router = useRouter();
   const [formKey, setFormKey] = React.useState(0);
-
-  const closeAndReset = React.useCallback(() => {
-    setFormKey((k) => k + 1);
-    onOpenChange(false);
-  }, [onOpenChange]);
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // Clear typed input when the dialog closes (X, overlay click, or Esc).
       setFormKey((k) => k + 1);
+      setFormError(null);
     }
     onOpenChange(nextOpen);
+  };
+
+  React.useEffect(() => {
+    if (open) setFormError(null);
+  }, [view, open]);
+
+  const afterSuccess = React.useCallback(() => {
+    setFormKey((k) => k + 1);
+    setFormError(null);
+    onOpenChange(false);
+    router.push("/studio");
+  }, [onOpenChange, router]);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    const { error } = await authClient.signIn.email({
+      email,
+      password,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setFormError(error.message ?? "Could not log in. Try again.");
+      return;
+    }
+
+    afterSuccess();
+  };
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    const { error } = await authClient.signUp.email({
+      name,
+      email,
+      password,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setFormError(error.message ?? "Could not create account. Try again.");
+      return;
+    }
+
+    afterSuccess();
   };
 
   const title = view === "login" ? "Log in" : "Create your account";
@@ -71,7 +109,7 @@ export default function AuthModal({
       : "Sign up to save styles and access Studio.";
 
   const switchHint =
-    view === "login" ? "Don’t have an account?" : "Already have an account?";
+    view === "login" ? "Have no account?" : "Already have an account?";
   const switchAction = view === "login" ? "Sign up" : "Log in";
   const nextView: AuthModalView = view === "login" ? "signup" : "login";
 
@@ -92,31 +130,24 @@ export default function AuthModal({
           </DialogHeader>
 
           <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full justify-center gap-2"
-              onClick={() => {
-                // UI-only for now; wire OAuth later.
-              }}
-            >
-              <GoogleIcon className="h-4 w-4" />
-              Continue with Google
-            </Button>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-2 text-xs text-muted-foreground">
-                  or
-                </span>
-              </div>
-            </div>
+            {formError ? (
+              <p
+                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {formError}
+              </p>
+            ) : null}
 
             <div key={formKey}>
-              {view === "signup" ? <SignupForm /> : <LoginForm />}
+              {view === "signup" ? (
+                <SignupForm
+                  disabled={isSubmitting}
+                  onSubmit={handleSignup}
+                />
+              ) : (
+                <LoginForm disabled={isSubmitting} onSubmit={handleLogin} />
+              )}
             </div>
           </div>
 
@@ -125,16 +156,12 @@ export default function AuthModal({
             <button
               type="button"
               className="font-medium text-foreground underline underline-offset-4"
+              disabled={isSubmitting}
               onClick={() => onViewChange(nextView)}
             >
               {switchAction}
             </button>
           </div>
-
-          {/* Optional: when you later add "submit success", call this to close+reset */}
-          <button type="button" className="sr-only" onClick={closeAndReset}>
-            Close
-          </button>
         </div>
       </DialogContent>
     </Dialog>
@@ -163,21 +190,22 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         "h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none",
         "placeholder:text-muted-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "disabled:cursor-not-allowed disabled:opacity-60",
         props.className ?? "",
       ].join(" ")}
     />
   );
 }
 
-function LoginForm() {
+function LoginForm({
+  disabled,
+  onSubmit,
+}: {
+  disabled: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
+}) {
   return (
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        // UI-only for now; wire login later.
-      }}
-    >
+    <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-2">
         <FieldLabel htmlFor="login-email" label="Email" />
         <TextInput
@@ -187,6 +215,7 @@ function LoginForm() {
           autoComplete="email"
           placeholder="you@example.com"
           required
+          disabled={disabled}
         />
       </div>
 
@@ -199,25 +228,26 @@ function LoginForm() {
           autoComplete="current-password"
           placeholder="••••••••"
           required
+          disabled={disabled}
         />
       </div>
 
-      <Button type="submit" className="w-full">
-        Log in
+      <Button type="submit" className="w-full" disabled={disabled}>
+        {disabled ? "Logging in…" : "Log in"}
       </Button>
     </form>
   );
 }
 
-function SignupForm() {
+function SignupForm({
+  disabled,
+  onSubmit,
+}: {
+  disabled: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
+}) {
   return (
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        // UI-only for now; wire signup later.
-      }}
-    >
+    <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-2">
         <FieldLabel htmlFor="signup-name" label="Name" />
         <TextInput
@@ -227,6 +257,7 @@ function SignupForm() {
           autoComplete="name"
           placeholder="Your name"
           required
+          disabled={disabled}
         />
       </div>
 
@@ -239,6 +270,7 @@ function SignupForm() {
           autoComplete="email"
           placeholder="you@example.com"
           required
+          disabled={disabled}
         />
       </div>
 
@@ -251,11 +283,12 @@ function SignupForm() {
           autoComplete="new-password"
           placeholder="Create a password"
           required
+          disabled={disabled}
         />
       </div>
 
-      <Button type="submit" className="w-full">
-        Sign up
+      <Button type="submit" className="w-full" disabled={disabled}>
+        {disabled ? "Creating account…" : "Sign up"}
       </Button>
     </form>
   );
